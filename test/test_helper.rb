@@ -23,7 +23,6 @@ unless ENV['COVERAGE'] == 'off'
   COVERAGE_THRESHOLD = 35
   require 'simplecov'
   require 'simplecov-rcov'
-  gem 'coveralls_reborn', '~> 0.26.0'
   require 'coveralls'
   Coveralls.wear!
 

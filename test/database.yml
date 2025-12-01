@@ -8,6 +8,13 @@ mysql:
   database: <%= ENV.fetch('DB_NAME', 'geokit_rails_tests') %>
   <<: *base
 
+trilogy:
+  adapter: trilogy
+  database: <%= ENV.fetch('DB_NAME', 'geokit_rails_tests') %>
+  ssl: true
+  ssl_mode: required
+  <<: *base
+
 mysql2spatial:
   adapter: mysql2spatial
   database: <%= ENV.fetch('DB_NAME', 'geokit_rails_tests') %>

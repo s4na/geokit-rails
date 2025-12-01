@@ -18,7 +18,7 @@ Rake::TestTask.new(:test) do |test|
   test.verbose = true
 end
 
-%w(mysql postgresql sqlserver sqlite).each do |configuration|
+%w(mysql trilogy postgresql sqlserver sqlite).each do |configuration|
   EnvTestTask.new("test_#{configuration}") do |t|
     t.pattern = 'test/*_test.rb'
     t.verbose = true
@@ -28,7 +28,7 @@ end
 end
 
 desc 'Test available databases.'
-task :test_databases => %w(test_mysql test_postgresql test_sqlserver test_sqlite)
+task :test_databases => %w(test_mysql test_trilogy test_postgresql test_sqlserver test_sqlite)
 
 desc "Generate SimpleCov test coverage and open in your browser"
 task :coverage do

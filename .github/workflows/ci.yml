@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test-sqlite:
+    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / SQLite
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.0', '3.1', '3.2', '3.3']
+        rails: ['6.1', '7.0', '7.1', '7.2']
+        exclude:
+          # Rails 7.2 requires Ruby >= 3.1
+          - ruby: '3.0'
+            rails: '7.2'
+
+    env:
+      DB: sqlite
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails }}.gemfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake test
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+
+  test-postgresql:
+    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / PostgreSQL
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: '3.2'
+            rails: '7.1'
+          - ruby: '3.3'
+            rails: '7.2'
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: tests
+          POSTGRES_PASSWORD: tests
+          POSTGRES_DB: geokit_rails_tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB: postgresql
+      DB_HOST: localhost
+      DB_USERNAME: tests
+      DB_PASSWORD: tests
+      DB_NAME: geokit_rails_tests
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails }}.gemfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake test
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+
+  test-mysql:
+    name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }} / MySQL
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: '3.2'
+            rails: '7.1'
+          - ruby: '3.3'
+            rails: '7.2'
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_USER: tests
+          MYSQL_PASSWORD: tests
+          MYSQL_DATABASE: geokit_rails_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB: mysql
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: tests
+      DB_PASSWORD: tests
+      DB_NAME: geokit_rails_tests
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails }}.gemfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake test
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Check gem can be built
+        run: gem build geokit-rails.gemspec
